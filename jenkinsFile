@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                // משיכת הקוד ממאגר ה-Version Control (Git/GitHub)
+                // משיכת הקוד ממאגר ה־Version Control (Git/GitHub)
                 checkout scm
             }
         }
@@ -26,13 +26,14 @@ pipeline {
         stage('Run Tests & Coverage Gate') {
             steps {
                 script {
-                    // הרצת בדיקות יחידה ואכיפת שער כיסוי 80% בתיקיית ה-API
+                    // בדיקה והתקנה אוטומטית של Node.js במידת הצורך והרצת בדיקות בתיקיית ה־API
                     dir('api') {
+                        sh 'node -v || (apt-get update && apt-get install -y nodejs npm)'
                         sh 'npm install'
                         sh "npm test -- --coverage --coverageThreshold='{\"global\":{\"lines\":80}}'"
                     }
                     
-                    // הרצת בדיקות יחידה ואכיפת שער כיסוי 80% בתיקיית ה-Web
+                    // הרצת בדיקות יחידה ואכיפת שער כיסוי 80% בתיקיית ה־Web
                     dir('web') {
                         sh 'npm install'
                         sh "npm test -- --coverage --coverageThreshold='{\"global\":{\"lines\":80}}'"
@@ -43,11 +44,11 @@ pipeline {
 
         stage('Build Docker Images') {
             when {
+                // בניית תמונות Docker מתבצעת אך ורק בענף ה־main או master
                 expression { env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master' }
             }
             steps {
                 script {
-                    // 1בניית תמונות ה-Docker לשני השירותים עם Build Args
                     sh "docker build --build-arg BUILD_NUMBER=${env.BUILD_NUMBER_ID} --build-arg COMMIT_SHA=${env.COMMIT_SHA} -t api-service ./api"
                     sh "docker build --build-arg BUILD_NUMBER=${env.BUILD_NUMBER_ID} --build-arg COMMIT_SHA=${env.COMMIT_SHA} -t web-service ./web"
                 }
@@ -56,13 +57,12 @@ pipeline {
 
         stage('Deploy with Docker Compose') {
             when {
-                // פריסה מלאה לאוויר תתבצע אך ורק בענף ה-main או master
+                // פריסה מלאה לאוויר תתבצע אך ורק בענף ה־main או master
                 expression { env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master' }
             }
             steps {
                 script {
-                    // הרמת הסביבה באמצעות Docker Compose
-                    sh 'docker compose down'
+                    sh 'docker compose down || true'
                     sh 'docker compose up -d --build'
                 }
             }
