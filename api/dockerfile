@@ -1,0 +1,18 @@
+# Dockerfile for api Service
+FROM node:20-alpine
+WORKDIR /app
+
+# הגדרת משתני Build Arguments לקבלת הנתונים מג'נקינס
+ARG BUILD_NUMBER=0
+ARG COMMIT_SHA=unknown
+
+# המרתם למשתני סביבה זמינים באפליקציה
+ENV BUILD_ID=$BUILD_NUMBER
+ENV COMMIT_HASH=$COMMIT_SHA
+
+COPY package*.json ./
+RUN npm install
+COPY . .
+
+EXPOSE 3000
+CMD ["node", "app.js"]
