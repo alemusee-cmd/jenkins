@@ -8,29 +8,34 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
+                // משיכת הקוד ממאגר ה-Version Control (Git/GitHub)
                 checkout scm
             }
         }
-        
+
         stage('Extract Git Commit') {
             steps {
                 script {
+                    // חילוץ 7 התווים הראשונים של מזהה הקומיט
                     env.COMMIT_SHA = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
                     echo "Current Commit SHA: ${env.COMMIT_SHA}"
                 }
             }
         }
 
-        stage('Run Tests') {
+        stage('Run Tests & Coverage Gate') {
             steps {
                 script {
+                    // הרצת בדיקות יחידה ואכיפת שער כיסוי 80% בתיקיית ה-API
                     dir('api') {
                         sh 'npm install'
-                        sh 'npm test'
+                        sh "npm test -- --coverage --coverageThreshold='{\"global\":{\"lines\":80}}'"
                     }
+                    
+                    // הרצת בדיקות יחידה ואכיפת שער כיסוי 80% בתיקיית ה-Web
                     dir('web') {
                         sh 'npm install'
-                        sh 'npm test'
+                        sh "npm test -- --coverage --coverageThreshold='{\"global\":{\"lines\":80}}'"
                     }
                 }
             }
@@ -38,10 +43,12 @@ pipeline {
 
         stage('Build Docker Images') {
             when {
+                // שלב הבנייה ירוץ אך ורק בענף ה-main או master בהתאם לדרישת סעיף 4
                 expression { env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master' }
             }
             steps {
                 script {
+                    // בניית תמונות ה-Docker לשני השירותים עם Build Args
                     sh "docker build --build-arg BUILD_NUMBER=${env.BUILD_NUMBER_ID} --build-arg COMMIT_SHA=${env.COMMIT_SHA} -t api-service ./api"
                     sh "docker build --build-arg BUILD_NUMBER=${env.BUILD_NUMBER_ID} --build-arg COMMIT_SHA=${env.COMMIT_SHA} -t web-service ./web"
                 }
@@ -50,11 +57,13 @@ pipeline {
 
         stage('Deploy with Docker Compose') {
             when {
+                // פריסה מלאה לאוויר תתבצע אך ורק בענף ה-main או master
                 expression { env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master' }
             }
             steps {
                 script {
-                    sh 'docker compose down || true'
+                    // הרמת הסביבה באמצעות Docker Compose
+                    sh 'docker compose down'
                     sh 'docker compose up -d --build'
                 }
             }
@@ -66,7 +75,7 @@ pipeline {
             echo "Pipeline executed successfully for branch: ${env.BRANCH_NAME ?: 'unknown'}"
         }
         failure {
-            echo "Pipeline failed! Check the logs above for more details."
+            echo "Pipeline failed! Quality Gate or Build condition was not met."
         }
     }
 }
