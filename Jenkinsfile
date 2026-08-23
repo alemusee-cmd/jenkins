@@ -11,7 +11,7 @@ pipeline {
                 checkout scm
             }
         }
-
+        
         stage('Extract Git Commit') {
             steps {
                 script {
