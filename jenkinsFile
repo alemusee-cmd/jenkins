@@ -43,7 +43,6 @@ pipeline {
 
         stage('Build Docker Images') {
             when {
-                // שלב הבנייה ירוץ אך ורק בענף ה-main או master בהתאם לדרישת סעיף 4
                 expression { env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master' }
             }
             steps {
