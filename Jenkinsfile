@@ -69,7 +69,7 @@ pipeline {
             }
         }
     }
-
+    
     post {
         success {
             echo "Pipeline executed successfully for branch: ${env.BRANCH_NAME ?: 'unknown'}"
