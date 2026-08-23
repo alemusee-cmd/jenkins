@@ -47,7 +47,7 @@ pipeline {
             }
             steps {
                 script {
-                    // בניית תמונות ה-Docker לשני השירותים עם Build Args
+                    // 1בניית תמונות ה-Docker לשני השירותים עם Build Args
                     sh "docker build --build-arg BUILD_NUMBER=${env.BUILD_NUMBER_ID} --build-arg COMMIT_SHA=${env.COMMIT_SHA} -t api-service ./api"
                     sh "docker build --build-arg BUILD_NUMBER=${env.BUILD_NUMBER_ID} --build-arg COMMIT_SHA=${env.COMMIT_SHA} -t web-service ./web"
                 }
