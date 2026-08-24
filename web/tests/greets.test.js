@@ -1,31 +1,45 @@
-const { greets, randomGreets, server } = require("../app");
+jest.mock("axios");
+const axios = require("axios");
+const { server } = require("../app");
 
-describe("Web Service Unit & Coverage Tests", () => {
-  test("should verify greets array contains at least 5 items", () => {
-    expect(greets.length).toBeGreaterThanOrEqual(5);
-  });
-
-  test("should verify all elements in greets are valid strings", () => {
-    for (const greet of greets) {
-      expect(typeof greet).toBe("string");
-      expect(greet.trim().length).toBeGreaterThan(0);
-    }
-  });
-
-  test("should return a random greeting included in the array", () => {
-    const result = randomGreets();
-    expect(greets).toContain(result);
-  });
-
-  test("should trigger server request handler logic for coverage", (done) => {
-    const req = {};
+describe("Web Service Tests", () => {
+  test("health returns ok with build and commit", (done) => {
+    const req = { url: "/health" };
     const res = {
-      writeHead: (status, headers) => {
-        expect(status).toBe(200);
-      },
+      writeHead: (s) => expect(s).toBe(200),
       end: (data) => {
-        const parsed = JSON.parse(data);
-        expect(parsed.status).toBe("ok");
+        const p = JSON.parse(data);
+        expect(p.status).toBe("ok");
+        expect(p).toHaveProperty("build");
+        expect(p).toHaveProperty("commit");
+        done();
+      },
+    };
+    server.emit("request", req, res);
+  });
+
+  test("root pulls greeting from api", (done) => {
+    axios.get.mockResolvedValue({ data: { greeting: "שלום עולם" } });
+    const req = { url: "/" };
+    const res = {
+      writeHead: (s) => expect(s).toBe(200),
+      end: (data) => {
+        const p = JSON.parse(data);
+        expect(p.message).toBe("שלום עולם");
+        expect(p.source).toBe("api");
+        done();
+      },
+    };
+    server.emit("request", req, res);
+  });
+
+  test("returns 502 when api is unreachable", (done) => {
+    axios.get.mockRejectedValue(new Error("refused"));
+    const req = { url: "/" };
+    const res = {
+      writeHead: (s) => expect(s).toBe(502),
+      end: (data) => {
+        expect(JSON.parse(data).status).toBe("error");
         done();
       },
     };

@@ -1,29 +1,40 @@
 const http = require("http");
+const axios = require("axios");
 
-const greets = [
-  "שלום עולם",
-  "ברוכים הבאים",
-  "יום מקסים",
-  "בהצלחה בלימודים",
-  "עבודה מעולה",
-];
+const server = http.createServer(async (req, res) => {
+  if (req.url === "/health") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(
+      JSON.stringify({
+        status: "ok",
+        build: process.env.BUILD_ID || "0",
+        commit: process.env.COMMIT_HASH || "unknown",
+      }),
+    );
+    return;
+  }
 
-function randomGreets() {
-  const index = Math.floor(Math.random() * greets.length);
-  return greets[index];
-}
-
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { "Content-Type": "application/json" });
-  res.end(JSON.stringify({ status: "ok", message: randomGreets() }));
+  const apiUrl = process.env.API_URL || "http://api:3000";
+  try {
+    const response = await axios.get(`${apiUrl}/greeting`);
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(
+      JSON.stringify({
+        status: "ok",
+        message: response.data.greeting,
+        source: "api",
+      }),
+    );
+  } catch (err) {
+    res.writeHead(502, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "error", message: "cannot reach api" }));
+  }
 });
 
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 
 if (process.env.NODE_ENV !== "test") {
-  server.listen(PORT, () => {
-    console.log(`Web Service is running on port ${PORT}`);
-  });
+  server.listen(PORT, () => console.log(`Web Service on port ${PORT}`));
 }
 
-module.exports = { greets, randomGreets, server };
+module.exports = { server };

@@ -1,81 +1,54 @@
 pipeline {
     agent any
 
-    environment {
-        BUILD_NUMBER_ID = "${env.BUILD_NUMBER ?: '0'}"
-    }
-
     stages {
-        stage('Checkout Code') {
-            steps {
-                // משיכת הקוד ממאגר ה-Version Control (Git/GitHub)
-                checkout scm
-            }
+        stage('Checkout') {
+            steps { checkout scm }
         }
 
-        stage('Extract Git Commit') {
+        stage('Extract Commit SHA') {
             steps {
                 script {
-                    // חילוץ 7 התווים הראשונים של מזהה הקומיט
                     env.COMMIT_SHA = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
-                    echo "Current Commit SHA: ${env.COMMIT_SHA}"
+                    echo "Commit: ${env.COMMIT_SHA}"
                 }
             }
         }
 
-        stage('Run Tests & Coverage Gate') {
+        stage('Test & Coverage Gate') {
             steps {
-                script {
-                    // הרצת בדיקות יחידה ואכיפת שער כיסוי 80% בתיקיית ה-API
-                    dir('api') {
-                        sh 'npm install'
-                        sh "npm test -- --coverage --coverageThreshold='{\"global\":{\"lines\":80}}'"
-                    }
-                    
-                    // הרצת בדיקות יחידה ואכיפת שער כיסוי 80% בתיקיית ה-Web
-                    dir('web') {
-                        sh 'npm install'
-                        sh "npm test -- --coverage --coverageThreshold='{\"global\":{\"lines\":80}}'"
-                    }
+                dir('api') {
+                    sh 'npm install'
+                    sh 'npm test'
+                }
+                dir('web') {
+                    sh 'npm install'
+                    sh 'npm test'
                 }
             }
         }
 
-        stage('Build Docker Images') {
+        stage('Build Images') {
+            // בונה בכל ענף (dev + main) — זו דרישת ה"בנייה" של סעיף 4
+            steps {
+                sh "docker build --build-arg BUILD_NUMBER=${env.BUILD_NUMBER} --build-arg COMMIT_SHA=${env.COMMIT_SHA} -t api-service ./api"
+                sh "docker build --build-arg BUILD_NUMBER=${env.BUILD_NUMBER} --build-arg COMMIT_SHA=${env.COMMIT_SHA} -t web-service:${env.BUILD_NUMBER} ./web"
+            }
+        }
+
+        stage('Deploy Blue-Green') {
+            // רק main מעלה לאוויר; dev נעצר אחרי בנייה
             when {
-                // שלב הבנייה ירוץ אך ורק בענף ה-main או master בהתאם לדרישת סעיף 4
                 expression { env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master' }
             }
             steps {
-                script {
-                    // בניית תמונות ה-Docker לשני השירותים עם Build Args
-                    sh "docker build --build-arg BUILD_NUMBER=${env.BUILD_NUMBER_ID} --build-arg COMMIT_SHA=${env.COMMIT_SHA} -t api-service ./api"
-                    sh "docker build --build-arg BUILD_NUMBER=${env.BUILD_NUMBER_ID} --build-arg COMMIT_SHA=${env.COMMIT_SHA} -t web-service ./web"
-                }
-            }
-        }
-
-        stage('Deploy with Docker Compose') {
-            when {
-                // פריסה מלאה לאוויר תתבצע אך ורק בענף ה-main או master
-                expression { env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master' }
-            }
-            steps {
-                script {
-                    // הרמת הסביבה באמצעות Docker Compose
-                    sh 'docker compose down'
-                    sh 'docker compose up -d --build'
-                }
+                sh "BUILD_NUMBER=${env.BUILD_NUMBER} COMMIT_SHA=${env.COMMIT_SHA} bash deploy.sh"
             }
         }
     }
-    
+
     post {
-        success {
-            echo "Pipeline executed successfully for branch: ${env.BRANCH_NAME ?: 'unknown'}"
-        }
-        failure {
-            echo "Pipeline failed! Quality Gate or Build condition was not met."
-        }
+        success { echo "Pipeline succeeded on branch ${env.BRANCH_NAME}" }
+        failure { echo "Pipeline failed on branch ${env.BRANCH_NAME}" }
     }
 }

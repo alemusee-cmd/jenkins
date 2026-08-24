@@ -1,33 +1,46 @@
-const { server } = require("../app");
+const { server, greets, randomGreet } = require("../app");
 
-describe("API Service Comprehensive Coverage Tests", () => {
-  test("should return status ok on valid health request", (done) => {
+describe("API Service Tests", () => {
+  test("health returns ok with build and commit", (done) => {
     const req = { url: "/health" };
     const res = {
-      writeHead: (status, headers) => {
-        expect(status).toBe(200);
-      },
+      writeHead: (s) => expect(s).toBe(200),
       end: (data) => {
-        const parsed = JSON.parse(data);
-        expect(parsed.status).toBe("ok");
+        const p = JSON.parse(data);
+        expect(p.status).toBe("ok");
+        expect(p).toHaveProperty("build");
+        expect(p).toHaveProperty("commit");
         done();
       },
     };
     server.emit("request", req, res);
   });
 
-  test("should return 404 on invalid route request", (done) => {
-    const req = { url: "/unknown" };
+  test("greeting returns an item from the list", (done) => {
+    const req = { url: "/greeting" };
     const res = {
-      writeHead: (status, headers) => {
-        expect(status).toBe(404);
-      },
+      writeHead: (s) => expect(s).toBe(200),
       end: (data) => {
-        const parsed = JSON.parse(data);
-        expect(parsed.error).toBe("Not Found");
+        expect(greets).toContain(JSON.parse(data).greeting);
         done();
       },
     };
     server.emit("request", req, res);
+  });
+
+  test("404 on unknown route", (done) => {
+    const req = { url: "/nope" };
+    const res = {
+      writeHead: (s) => expect(s).toBe(404),
+      end: (data) => {
+        expect(JSON.parse(data).error).toBe("Not Found");
+        done();
+      },
+    };
+    server.emit("request", req, res);
+  });
+
+  test("randomGreet returns a valid item", () => {
+    expect(greets).toContain(randomGreet());
   });
 });
