@@ -3,14 +3,8 @@ const axios = require("axios");
 
 const server = http.createServer(async (req, res) => {
   if (req.url === "/health") {
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(
-      JSON.stringify({
-        status: "ok",
-        build: process.env.BUILD_ID || "0",
-        commit: process.env.COMMIT_HASH || "unknown",
-      }),
-    );
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "error" }));
     return;
   }
 
