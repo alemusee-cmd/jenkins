@@ -48,7 +48,10 @@ pipeline {
     }
 
     post {
-        success { echo "Pipeline succeeded on branch ${env.BRANCH_NAME}" }
-        failure { echo "Pipeline failed on branch ${env.BRANCH_NAME}" }
+    always {
+        junit '**/junit.xml'
+    }
+    success { echo "Pipeline succeeded on branch ${env.BRANCH_NAME}" }
+    failure { echo "Pipeline failed on branch ${env.BRANCH_NAME}" }
     }
 }
