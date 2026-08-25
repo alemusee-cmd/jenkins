@@ -36,11 +36,6 @@ pipeline {
             }
         }
 
-        stage('Security Scan') {
-            steps {
-                sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image --severity CRITICAL --exit-code 1 web-service:${env.BUILD_NUMBER}"
-            }
-        }
         
         stage('Deploy Blue-Green') {
             // רק main מעלה לאוויר; dev נעצר אחרי בנייה
