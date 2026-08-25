@@ -3,12 +3,15 @@ const axios = require("axios");
 const { server } = require("../app");
 
 describe("Web Service Tests", () => {
-  test("health returns error (sabotage C)", (done) => {
+  test("health returns ok with build and commit", (done) => {
     const req = { url: "/health" };
     const res = {
-      writeHead: (s) => expect(s).toBe(500),
+      writeHead: (s) => expect(s).toBe(200),
       end: (data) => {
-        expect(JSON.parse(data).status).toBe("error");
+        const p = JSON.parse(data);
+        expect(p.status).toBe("ok");
+        expect(p).toHaveProperty("build");
+        expect(p).toHaveProperty("commit");
         done();
       },
     };
