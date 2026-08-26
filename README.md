@@ -153,11 +153,6 @@ stage('Deploy Blue-Green') {
 4. **אם עברה** → מעדכן את nginx להצביע על החדשה, מבצע טעינה חלקה (`SIGHUP`), ומכבה את הישנה.
 5. **אם נכשלה** → מוחק את הגרסה החדשה, הישנה נשארת חיה, והבנייה נצבעת באדום (`exit 1`).
 
-> 📸 **צילום מס' 1 — בנייה ירוקה מלאה**
-> צלם בנייה מוצלחת של `main` שבה שלב `Deploy Blue-Green` רץ בירוק והחליף בהצלחה את הגרסה. בלוג הפריסה יופיע `Health OK. Switching nginx` ו-`is LIVE`.
->
-> `![בנייה ירוקה מלאה](screenshots/01-green-build.png)`
-
 ---
 
 ## מבחן החבלה
@@ -172,16 +167,6 @@ stage('Deploy Blue-Green') {
 | **ד' — כתובת api שבורה** | web פונה לכתובת api שגויה               | בדיקת האינטגרציה                     |
 | **ה' — Dockerfile שבור** | שגיאת תחביר ב-Dockerfile                | שלב הבנייה                           |
 
-> 📸 **צילום מס' 2 — בנייה שנעצרה באדום**
-> צלם תרחיש חבלה שבו הבנייה נעצרת ונצבעת אדום (למשל תרחיש א' או ב' — נעצר ב-`Test & Coverage Gate`, ושלבי הבנייה והפריסה מדולגים).
->
-> `![בנייה אדומה](screenshots/02-red-build.png)`
-
-> 📸 **צילום מס' 3 — החזרה אוטומטית לגרסה קודמת**
-> צלם את לוג שלב `Deploy Blue-Green` בתרחיש ג', שבו רואים `Health FAILED. Rolling back` — הגרסה החדשה נמחקת, הישנה נשארת חיה.
->
-> `![החזרה אוטומטית](screenshots/03-rollback.png)`
-
 ---
 
 ## בונוס: דוח בדיקות בממשק
@@ -195,15 +180,6 @@ post {
     }
 }
 ```
-
-התוצאה: טאב **Test Result** בעמוד הבנייה, עם טבלת בדיקות מסודרת וגרף מגמת בדיקות.
-
-> 📸 **בונוס — דוח בדיקות בממשק**
-> צלם את טאב ה-Test Result עם טבלת הבדיקות בממשק.
->
-> `![דוח בדיקות](screenshots/bonus-test-report.png)`
-
----
 
 ## איך מריצים
 
@@ -245,18 +221,13 @@ curl http://localhost:8080/health    # חותמת בנייה
 
 ---
 
-## צילומי מסך להגשה
+## צילומי מסך
 
 ![בנייה ירוקה מלאה](screenshots/01-green-build.png)
-![בדיקה שנעצרה באדום](screenshots/2-red-build.png)
+![בדיקה שנעצרה באדום](screenshots/02-red-build.png)
 ![החזרה אוטומטית (rollback)](screenshots/03-rollback.png)
-![שני ענפים](screenshots/4-two-branches.png)
+![שני ענפים](screenshots/04-two-branches.png)
 ![דוח בדיקות בממשק](screenshots/bonus-test-report.png)
-
-> 📸 **צילום מס' 4 — שני ענפים**
-> צלם את עמוד ה-Multibranch Pipeline שבו רואים את שני הענפים (`dev` ו-`main`) עם היסטוריות בנייה נפרדות.
-
-**קישור למאגר:** `https://github.com/alemusee-cmd/jenkins`
 
 ---
 
